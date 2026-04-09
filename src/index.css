@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 80 14% 97%;
+    --foreground: 150 55% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 150 55% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 150 55% 10%;
+
+    --primary: 150 55% 23%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 168 75% 24%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 80 10% 92%;
+    --muted-foreground: 150 10% 40%;
+
+    --accent: 37 91% 43%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 80 10% 90%;
+    --input: 80 10% 88%;
+    --ring: 150 55% 23%;
+
+    --radius: 1rem;
+
+    --sidebar-background: 150 55% 23%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 150 55% 23%;
+    --sidebar-accent: 150 55% 28%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 150 55% 30%;
+    --sidebar-ring: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 150 20% 6%;
+    --foreground: 80 14% 95%;
+
+    --card: 150 20% 9%;
+    --card-foreground: 80 14% 95%;
+
+    --popover: 150 20% 9%;
+    --popover-foreground: 80 14% 95%;
+
+    --primary: 150 55% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 168 75% 35%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 150 15% 15%;
+    --muted-foreground: 80 10% 60%;
+
+    --accent: 37 91% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 150 15% 18%;
+    --input: 150 15% 18%;
+    --ring: 150 55% 40%;
+
+    --sidebar-background: 150 20% 8%;
+    --sidebar-foreground: 80 14% 95%;
+    --sidebar-primary: 150 55% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 150 20% 14%;
+    --sidebar-accent-foreground: 80 14% 95%;
+    --sidebar-border: 150 15% 18%;
+    --sidebar-ring: 150 55% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
