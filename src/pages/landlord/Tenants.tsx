@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Search, UserPlus, Users, Mail, Phone, ShieldCheck, Calendar, MapPin, X } from 'lucide-react';
+import { Search, UserPlus, Users, Mail, Phone, ShieldCheck, Calendar, MapPin, X, Box } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InviteTenantDialog } from '@/components/landlord/InviteTenantDialog';
 import { Badge } from '@/components/ui/badge';
