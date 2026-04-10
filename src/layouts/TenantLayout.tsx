@@ -27,10 +27,10 @@ const TenantLayout = () => {
           </div>
           <span className="font-black text-[#1e4d2b] tracking-tighter text-xl">BoardEase</span>
         </div>
-        <button className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[#1a1a1a] relative">
+        <Link to="/tenant" className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[#1a1a1a] relative hover:bg-gray-50 transition-colors">
           <Bell className="h-5 w-5" />
           <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-        </button>
+        </Link>
       </header>
 
       {/* Main Content Area */}

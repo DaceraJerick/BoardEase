@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { LandlordBottomNav } from '@/components/landlord/LandlordBottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bell } from 'lucide-react';
@@ -23,10 +23,10 @@ const LandlordLayout = () => {
           
           <h1 className="text-base font-bold text-[#1e4d2b] tracking-tight">BoardEase Residences</h1>
           
-          <button className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm relative">
+          <Link to="/landlord/announcements" className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm relative hover:bg-gray-50 transition-colors">
             <Bell className="h-5 w-5 text-[#1e4d2b]" />
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-          </button>
+          </Link>
         </div>
       </header>
 

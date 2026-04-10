@@ -45,7 +45,7 @@ const LandlordTickets = () => {
 
     const tenantsMap: Record<string, any> = {};
     baseTenants.forEach(t => {
-      tenantsMap[t.id] = {
+      tenantsMap[t.user_id] = {
         ...t,
         profiles: profilesMap[t.user_id] || { full_name: 'Unknown Tenant' }
       };
