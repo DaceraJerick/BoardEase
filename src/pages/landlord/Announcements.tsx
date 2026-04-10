@@ -45,6 +45,22 @@ const LandlordAnnouncements = () => {
       content: form.content,
     });
     if (error) { toast.error(error.message); return; }
+
+    // Trigger native push notifications silently to tenants of this boarding house
+    try {
+      await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          content: form.content,
+          boardingHouseId: bh.id
+        })
+      });
+    } catch (err) {
+      console.error('Failed to push notification:', err);
+    }
+
     toast.success('Announcement posted');
     setDialogOpen(false);
     setForm({ title: '', content: '' });

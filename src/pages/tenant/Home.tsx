@@ -145,6 +145,15 @@ const TenantHome = () => {
     fetchData();
   }, [user]);
 
+  // Tag the device for push notifications if inside the Median APK
+  useEffect(() => {
+    if (tenant?.boarding_house_id) {
+      if (typeof window !== 'undefined' && navigator.userAgent.toLowerCase().includes('median')) {
+        window.location.href = `median://onesignal/tags?tags={"boarding_house_id":"${tenant.boarding_house_id}"}`;
+      }
+    }
+  }, [tenant?.boarding_house_id]);
+
   if (loading && state === 'loading') {
     return (
       <div className="space-y-6 pt-4 max-w-lg mx-auto w-full">
