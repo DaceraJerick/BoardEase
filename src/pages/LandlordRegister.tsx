@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 const LandlordRegister = () => {
   const [fullName, setFullName] = useState('');
@@ -14,6 +14,8 @@ const LandlordRegister = () => {
   const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const { signUp } = useAuth();
@@ -123,26 +125,44 @@ const LandlordRegister = () => {
               Security
             </p>
             <div className="space-y-3">
-              <Input
-                id="password"
-                type="password"
-                placeholder="Password *"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="rounded-xl border border-[#d8d8d0] bg-white h-12 px-4 text-sm placeholder:text-[#9aa09a] focus-visible:ring-[#4a6741] focus-visible:border-[#4a6741]"
-              />
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm password *"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-                className="rounded-xl border border-[#d8d8d0] bg-white h-12 px-4 text-sm placeholder:text-[#9aa09a] focus-visible:ring-[#4a6741] focus-visible:border-[#4a6741]"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password *"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="rounded-xl border border-[#d8d8d0] bg-white h-12 px-4 text-sm placeholder:text-[#9aa09a] focus-visible:ring-[#4a6741] focus-visible:border-[#4a6741] pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7a6b] hover:text-[#1a2e1a] focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm password *"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="rounded-xl border border-[#d8d8d0] bg-white h-12 px-4 text-sm placeholder:text-[#9aa09a] focus-visible:ring-[#4a6741] focus-visible:border-[#4a6741] pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7a6b] hover:text-[#1a2e1a] focus:outline-none"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
           </div>
 
