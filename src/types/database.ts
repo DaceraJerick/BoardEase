@@ -15,6 +15,9 @@ export interface Profile {
   email: string | null;
   phone: string | null;
   avatar_url: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  emergency_contact_relationship?: string | null;
   created_at: string;
 }
 

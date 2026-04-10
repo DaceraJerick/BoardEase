@@ -9,7 +9,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Copy, UserPlus } from 'lucide-react';
 import type { BoardingHouse } from '@/types/database';
 
-export const InviteTenantDialog = () => {
+export const InviteTenantDialog = ({ trigger }: { trigger?: React.ReactNode }) => {
   const { user } = useAuth();
   const [bh, setBh] = useState<BoardingHouse | null>(null);
 
@@ -30,7 +30,7 @@ export const InviteTenantDialog = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="rounded-xl gap-2"><UserPlus className="h-4 w-4" /> Invite Tenant</Button>
+        {trigger || <Button className="rounded-xl gap-2"><UserPlus className="h-4 w-4" /> Invite Tenant</Button>}
       </DialogTrigger>
       <DialogContent className="rounded-2xl">
         <DialogHeader><DialogTitle>Invite Tenant</DialogTitle></DialogHeader>

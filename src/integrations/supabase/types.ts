@@ -134,6 +134,9 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -142,6 +145,9 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -150,6 +156,9 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
         }
         Relationships: []
       }
