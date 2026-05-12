@@ -18,6 +18,12 @@ export interface Profile {
   emergency_contact_name?: string | null;
   emergency_contact_phone?: string | null;
   emergency_contact_relationship?: string | null;
+  gcash_number?: string | null;
+  gcash_name?: string | null;
+  maya_number?: string | null;
+  maya_name?: string | null;
+  gcash_qr_url?: string | null;
+  maya_qr_url?: string | null;
   created_at: string;
 }
 
@@ -66,6 +72,7 @@ export interface Payment {
   method: PaymentMethod | null;
   reference_number: string | null;
   status: PaymentStatus;
+  receipt_url?: string | null;
   due_date: string;
   paid_at: string | null;
   created_at: string;

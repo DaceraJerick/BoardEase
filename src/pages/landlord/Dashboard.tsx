@@ -96,8 +96,8 @@ const LandlordDashboard = () => {
     const pActs: ActivityItem[] = payments.slice(0, 3).map(p => ({
       id: p.id,
       type: 'payment',
-      title: `${profilesMap[p.tenant_id] || 'Tenant'} paid rent`,
-      subtitle: `${p.status === 'paid' ? 'Rent payment' : 'Overdue payment'}`,
+      title: p.status === 'paid' ? `${profilesMap[p.tenant_id] || 'Tenant'} paid rent` : `${profilesMap[p.tenant_id] || 'Tenant'} submitted payment`,
+      subtitle: `${p.status === 'paid' ? 'Verified' : 'Under Review'} • ${p.method?.toUpperCase() || 'CASH'}`,
       timestamp: p.created_at,
       amount: p.amount,
       status: p.status

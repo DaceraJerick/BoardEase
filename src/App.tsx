@@ -21,6 +21,7 @@ import LandlordQRCode from "@/pages/landlord/QRCode";
 import TenantLayout from "@/layouts/TenantLayout";
 import TenantHome from "@/pages/tenant/Home";
 import TenantPay from "@/pages/tenant/Pay";
+import TenantPaymentSuccess from "@/pages/tenant/PaymentSuccess";
 import TenantRequests from "@/pages/tenant/Requests";
 import TenantReceipts from "@/pages/tenant/Receipts";
 import TenantProfile from "@/pages/tenant/Profile";

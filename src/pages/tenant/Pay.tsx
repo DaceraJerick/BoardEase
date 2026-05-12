@@ -15,11 +15,13 @@ import {
   Building2, 
   Zap, 
   Droplets,
-  CheckCircle2,
-  Box
+  CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+
+import { ReceiptModal } from '@/components/ReceiptModal';
+import { QRCodeSVG } from 'qrcode.react';
 
 const paymentMethods: { value: PaymentMethod; label: string; icon: any }[] = [
   { value: 'gcash', label: 'GCash', icon: Smartphone },
@@ -27,14 +29,18 @@ const paymentMethods: { value: PaymentMethod; label: string; icon: any }[] = [
   { value: 'card', label: 'Card', icon: CreditCard },
 ];
 
+
 const TenantPay = () => {
   const { user } = useAuth();
   const [method, setMethod] = useState<PaymentMethod>('gcash');
-  const [reference, setReference] = useState('');
   const [amount, setAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dueInfo, setDueInfo] = useState({ total: 0, rent: 0, electricity: 0, water: 0, month: '' });
+  const [unpaidId, setUnpaidId] = useState<string | null>(null);
+  const [landlordProfile, setLandlordProfile] = useState<any>(null);
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -48,9 +54,49 @@ const TenantPay = () => {
 
     const rooms = (tenantRes.data as any)?.rooms;
     const unpaid = payRes.data;
+    
+    console.log('Fetching tenant data for user:', user.id);
+    if (tenantRes.data) {
+      console.log('Tenant record found:', tenantRes.data);
+      const targetLandlordId = tenantRes.data.landlord_id;
+      
+      if (targetLandlordId) {
+        const { data: profile, error: pError } = await supabase.from('profiles').select('*').eq('id', targetLandlordId).maybeSingle();
+        console.log('DEBUG: GCash Num:', profile?.gcash_number, '| Maya Num:', profile?.maya_number);
+        console.log('DEBUG: GCash Name:', profile?.gcash_name, '| Maya Name:', profile?.maya_name);
+        if (profile) {
+          console.log('Landlord profile found by ID:', profile);
+          setLandlordProfile(profile);
+        } else {
+          console.error('Landlord profile not found for ID:', targetLandlordId, pError);
+          // Set to a placeholder so UI stops fetching
+          setLandlordProfile({ id: 'not_found' });
+        }
+      } else if (tenantRes.data.boarding_house_id) {
+        console.log('Landlord ID missing in tenant record, fetching from boarding house:', tenantRes.data.boarding_house_id);
+        const { data: bh } = await supabase.from('boarding_houses').select('landlord_id').eq('id', tenantRes.data.boarding_house_id).single();
+        if (bh?.landlord_id) {
+          const { data: profile } = await supabase.from('profiles').select('*').eq('id', bh.landlord_id).maybeSingle();
+          if (profile) {
+            console.log('Landlord profile found via boarding house:', profile);
+            setLandlordProfile(profile);
+          } else {
+            setLandlordProfile({ id: 'not_found' });
+          }
+        } else {
+          setLandlordProfile({ id: 'not_found' });
+        }
+      } else {
+        setLandlordProfile({ id: 'not_found' });
+      }
+    } else {
+      console.warn('No tenant record found for user ID:', user.id);
+      setLandlordProfile({ id: 'not_found' });
+    }
 
     const baseRent = rooms?.rent_amount || 0;
     const totalDue = unpaid?.amount || baseRent;
+    if (unpaid) setUnpaidId(unpaid.id);
     
     // Simulate a breakdown for visual fidelity matching the mockup
     // If totalDue > baseRent, we split the remainder 70/30 between Electricity and Water
@@ -81,28 +127,77 @@ const TenantPay = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !method) return;
+    
+    if (!receiptFile) {
+      toast.error('Please upload a screenshot of your payment receipt');
+      return;
+    }
+
     setSubmitting(true);
 
-    const { data: tenant } = await supabase.from('tenants').select('landlord_id, boarding_house_id').eq('user_id', user.id).single();
-    if (!tenant) { toast.error('No boarding house found'); setSubmitting(false); return; }
+    try {
+      const { data: tenant } = await supabase.from('tenants').select('landlord_id, boarding_house_id').eq('user_id', user.id).single();
+      if (!tenant) throw new Error('No boarding house found');
 
-    const { error } = await supabase.from('payments').insert({
-      tenant_id: user.id,
-      landlord_id: tenant.landlord_id,
-      boarding_house_id: tenant.boarding_house_id,
-      amount: parseFloat(amount),
-      method,
-      reference_number: reference || null,
-      status: 'pending',
-      due_date: new Date().toISOString(),
-    });
+      const amountNum = parseFloat(amount);
+      
+      // 1. Upload Receipt to Storage
+      const fileExt = receiptFile.name.split('.').pop();
+      const filePath = `${user.id}/receipt_${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(filePath, receiptFile);
 
-    setSubmitting(false);
-    if (error) { toast.error(error.message); return; }
-    
-    toast.success('Payment submitted! Awaiting landlord confirmation.');
-    setReference('');
-    fetchData();
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(filePath);
+
+      // 2. Create or Update Payment Record
+      let activePaymentId = unpaidId;
+      if (!activePaymentId) {
+        const { data, error } = await supabase.from('payments').insert({
+          tenant_id: user.id,
+          landlord_id: tenant.landlord_id,
+          boarding_house_id: tenant.boarding_house_id,
+          amount: amountNum,
+          method,
+          status: 'pending',
+          receipt_url: publicUrl,
+          due_date: new Date().toISOString(),
+        }).select().single();
+        
+        if (error) throw error;
+        activePaymentId = data.id;
+      } else {
+        const { error } = await supabase.from('payments').update({ 
+          method, 
+          receipt_url: publicUrl,
+          status: 'pending' // Ensure it's pending for landlord review
+        }).eq('id', activePaymentId);
+        
+        if (error) throw error;
+      }
+
+      toast.success('Payment submitted for verification');
+      
+      // 3. Show Success Receipt Modal locally
+      setReceiptData({
+        tenantName: user.user_metadata?.full_name || 'Tenant',
+        amount: amountNum,
+        method: method.toUpperCase(),
+        reference: 'PENDING',
+        date: new Date(),
+        month: dueInfo.month
+      });
+
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -194,8 +289,71 @@ const TenantPay = () => {
                   </button>
                )
             })}
+          </div>
+       </div>
+
+       {/* Dynamic Payment Account Info */}
+       {(method === 'gcash' || method === 'maya') && (
+         <div className="px-2 space-y-4">
+           <div className="bg-gray-50 border border-gray-100 rounded-[2rem] p-6 space-y-4">
+             <h4 className="text-sm font-black text-[#1a1a1a] uppercase tracking-wider">Landlord's {method === 'gcash' ? 'GCash' : 'Maya'}</h4>
+             
+             {!landlordProfile ? (
+               <div className="py-4 text-center">
+                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest italic">Fetching landlord details...</p>
+               </div>
+             ) : landlordProfile.id === 'not_found' ? (
+               <div className="py-4 text-center">
+                 <p className="text-xs font-bold text-rose-400 uppercase tracking-widest italic">Landlord info unavailable. Please contact support.</p>
+               </div>
+             ) : !(method === 'gcash' ? landlordProfile.gcash_number : landlordProfile.maya_number) ? (
+               <div className="py-4 text-center">
+                 <p className="text-xs font-bold text-rose-400 uppercase tracking-widest italic">Landlord has not set up {method.toUpperCase()} yet.</p>
+               </div>
+             ) : (
+               <>
+                 <div className="flex justify-between items-center">
+                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Name</span>
+                   <span className="text-sm font-black text-[#1a1a1a]">{method === 'gcash' ? landlordProfile.gcash_name : landlordProfile.maya_name}</span>
+                 </div>
+                 <div className="flex justify-between items-center">
+                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Number</span>
+                   <span className="text-lg font-black text-[#1e4d2b] tracking-wider">{method === 'gcash' ? landlordProfile.gcash_number : landlordProfile.maya_number}</span>
+                 </div>
+ 
+                 <div className="flex gap-2 pt-2">
+                   <Button 
+                     type="button"
+                     className="w-full h-12 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white"
+                     onClick={() => {
+                       const url = method === 'gcash' ? 'intent://' : 'https://maya.ph';
+                       window.open(url, '_blank');
+                     }}
+                   >
+                     <Smartphone className="w-4 h-4 mr-2" />
+                     Open App
+                   </Button>
+                 </div>
+ 
+                 <div className="pt-4 flex justify-center animate-in zoom-in duration-300">
+                   <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
+                     {method === 'gcash' && landlordProfile.gcash_qr_url ? (
+                       <img src={landlordProfile.gcash_qr_url} alt="GCash QR" className="w-full max-w-[200px] object-contain" />
+                     ) : method === 'maya' && landlordProfile.maya_qr_url ? (
+                       <img src={landlordProfile.maya_qr_url} alt="Maya QR" className="w-full max-w-[200px] object-contain" />
+                     ) : (
+                       <QRCodeSVG 
+                         value={method === 'gcash' ? (landlordProfile.gcash_number || '') : (landlordProfile.maya_number || '')} 
+                         size={200} 
+                       />
+                     )}
+                   </div>
+                 </div>
+               </>
+             )}
+           </div>
          </div>
-      </div>
+       )}
 
       {/* Form Fields */}
       <form onSubmit={handleSubmit} className="space-y-8 px-2">
@@ -209,22 +367,21 @@ const TenantPay = () => {
                  value={amount}
                  onChange={(e) => setAmount(e.target.value)}
                  required
+                 disabled={submitting}
                />
             </div>
          </div>
 
          <div className="space-y-3">
-            <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Reference Number</Label>
-            <input 
-              type="text"
-              placeholder="Enter manual reference or hash"
-              className="w-full h-16 bg-gray-100 border-0 rounded-[2rem] px-8 text-sm font-bold text-[#1a1a1a] focus:ring-2 focus:ring-[#1e4d2b]/20"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
+            <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Upload Receipt Screenshot</Label>
+            <Input 
+              type="file" 
+              accept="image/*"
+              className="h-16 rounded-[2rem] bg-gray-100 border-0 px-6 pt-5"
+              onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+              required
+              disabled={submitting}
             />
-            <p className="text-[9px] font-bold text-gray-400 ml-4 italic">
-               Enter the 12-digit number from your {method?.toUpperCase()} receipt.
-            </p>
          </div>
 
          <Button 
@@ -232,10 +389,16 @@ const TenantPay = () => {
            disabled={submitting || dueInfo.total === 0}
            className="w-full h-20 rounded-[2rem] bg-[#1e4d2b] hover:bg-[#163a20] text-white font-black text-lg flex items-center justify-center gap-3 shadow-2xl shadow-emerald-900/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
          >
-           {submitting ? 'Processing...' : 'Submit Payment'}
+           {submitting ? 'Submitting...' : 'Submit Payment'}
            {!submitting && <ArrowRight className="h-6 w-6" />}
          </Button>
       </form>
+
+      <ReceiptModal 
+        open={!!receiptData} 
+        onOpenChange={(open) => !open && setReceiptData(null)} 
+        receiptData={receiptData} 
+      />
     </div>
   );
 };

@@ -89,6 +89,7 @@ export type Database = {
           reference_number: string | null
           status: Database["public"]["Enums"]["payment_status"]
           tenant_id: string
+          receipt_url: string | null
         }
         Insert: {
           amount: number
@@ -102,6 +103,7 @@ export type Database = {
           reference_number?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           tenant_id: string
+          receipt_url?: string | null
         }
         Update: {
           amount?: number
@@ -115,6 +117,7 @@ export type Database = {
           reference_number?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           tenant_id?: string
+          receipt_url?: string | null
         }
         Relationships: [
           {
@@ -137,6 +140,12 @@ export type Database = {
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           emergency_contact_relationship: string | null
+          gcash_number: string | null
+          gcash_name: string | null
+          maya_number: string | null
+          maya_name: string | null
+          gcash_qr_url: string | null
+          maya_qr_url: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -148,6 +157,12 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
+          gcash_number?: string | null
+          gcash_name?: string | null
+          maya_number?: string | null
+          maya_name?: string | null
+          gcash_qr_url?: string | null
+          maya_qr_url?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -159,6 +174,12 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
+          gcash_number?: string | null
+          gcash_name?: string | null
+          maya_number?: string | null
+          maya_name?: string | null
+          gcash_qr_url?: string | null
+          maya_qr_url?: string | null
         }
         Relationships: []
       }

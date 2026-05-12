@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Plus, CreditCard, Banknote, Calendar, History, X } from 'lucide-react';
+import { Plus, CreditCard, Banknote, Calendar, History, X, Eye } from 'lucide-react';
 import type { Payment, PaymentMethod, PaymentStatus } from '@/types/database';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
@@ -28,6 +28,7 @@ const LandlordPayments = () => {
   const [tenants, setTenants] = useState<any[]>([]);
   const [form, setForm] = useState({ tenant_id: '', amount: 0, method: 'cash' as PaymentMethod, reference_number: '', due_date: '' });
   const [filter, setFilter] = useState<string>('all');
+  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -83,18 +84,27 @@ const LandlordPayments = () => {
       landlord_id: user.id,
       boarding_house_id: tenantEntry.boarding_house_id,
       amount: form.amount,
-      method: form.method,
-      reference_number: form.reference_number || null,
-      status: 'paid',
+      method: null,
+      status: 'pending',
       due_date: form.due_date,
-      paid_at: new Date().toISOString(),
     });
 
     if (error) { toast.error(error.message); return; }
     
-    toast.success('Payment recorded successfully');
+    toast.success('Rent due issued to tenant');
     setDialogOpen(false);
     setForm({ tenant_id: '', amount: 0, method: 'cash' as PaymentMethod, reference_number: '', due_date: '' });
+    fetchData();
+  };
+
+  const handleApprove = async (paymentId: string) => {
+    const { error } = await supabase.from('payments').update({ 
+      status: 'paid', 
+      paid_at: new Date().toISOString() 
+    }).eq('id', paymentId);
+    
+    if (error) { toast.error(error.message); return; }
+    toast.success('Payment approved');
     fetchData();
   };
 
@@ -125,7 +135,7 @@ const LandlordPayments = () => {
           <DialogTrigger asChild>
              <Button className="h-12 px-6 rounded-2xl bg-[#1e4d2b] hover:bg-[#163a20] shadow-lg shadow-emerald-900/10 flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                <span className="text-xs font-bold uppercase tracking-tight">Record</span>
+                <span className="text-xs font-bold uppercase tracking-tight">Issue Due</span>
              </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[440px] rounded-[2.5rem] p-0 border-0 shadow-2xl overflow-hidden bg-white [&>button:last-child]:hidden">
@@ -135,8 +145,8 @@ const LandlordPayments = () => {
               </DialogClose>
               
               <DialogHeader className="mb-8">
-                <DialogTitle className="text-2xl font-black text-[#1a1a1a] tracking-tight text-center sm:text-left">Record Payment</DialogTitle>
-                <p className="text-xs font-bold text-gray-400 tracking-tight mt-1 text-center sm:text-left">Manually log a tenant payment</p>
+                <DialogTitle className="text-2xl font-black text-[#1a1a1a] tracking-tight text-center sm:text-left">Issue Rent / Due</DialogTitle>
+                <p className="text-xs font-bold text-gray-400 tracking-tight mt-1 text-center sm:text-left">Create a pending payment for a tenant</p>
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -172,35 +182,19 @@ const LandlordPayments = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                      <Label className="text-[10px] font-black text-[#1a1a1a] uppercase tracking-[0.15em] ml-1">Method</Label>
-                      <Select value={form.method} onValueChange={v => setForm(f => ({ ...f, method: v as PaymentMethod }))}>
-                        <SelectTrigger className="h-14 rounded-2xl border-gray-100 px-5">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-gray-100 shadow-xl">
-                          <SelectItem value="cash" className="text-xs font-bold rounded-xl">Cash</SelectItem>
-                          <SelectItem value="gcash" className="text-xs font-bold rounded-xl">GCash</SelectItem>
-                          <SelectItem value="maya" className="text-xs font-bold rounded-xl">Maya</SelectItem>
-                          <SelectItem value="card" className="text-xs font-bold rounded-xl">Card</SelectItem>
-                        </SelectContent>
-                      </Select>
-                   </div>
-                   <div className="space-y-2">
-                      <Label className="text-[10px] font-black text-[#1a1a1a] uppercase tracking-[0.15em] ml-1">Due Date</Label>
-                      <Input 
-                        type="date" 
-                        value={form.due_date} 
-                        onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} 
-                        required 
-                        className="h-14 rounded-2xl border-gray-100 text-xs font-bold px-5" 
-                      />
-                   </div>
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-black text-[#1a1a1a] uppercase tracking-[0.15em] ml-1">Due Date</Label>
+                   <Input 
+                     type="date" 
+                     value={form.due_date} 
+                     onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} 
+                     required 
+                     className="h-14 rounded-2xl border-gray-100 text-xs font-bold px-5" 
+                   />
                 </div>
 
                 <Button type="submit" className="w-full h-16 rounded-[1.25rem] bg-[#1e4d2b] hover:bg-[#163a20] text-white font-black text-sm flex items-center justify-center gap-2 mt-4 shadow-xl shadow-emerald-900/20">
-                  Record Payment
+                  Issue Pending Invoice
                 </Button>
               </form>
             </div>
@@ -264,10 +258,53 @@ const LandlordPayments = () => {
                       <span className="text-2xl font-black text-gray-900 tracking-tight">₱{payment.amount.toLocaleString()}</span>
                       <span className="text-[10px] font-bold text-gray-300">PHP</span>
                    </div>
-                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                     {payment.method || 'CASH'}
-                   </p>
+                   <div className="flex flex-col items-end gap-1">
+                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
+                       {payment.method || 'CASH'}
+                     </p>
+                     {payment.reference_number && (
+                       <p className="text-[8px] font-mono text-gray-400">Ref: {payment.reference_number}</p>
+                     )}
+                   </div>
                 </div>
+                
+                {payment.status === 'pending' && (
+                   <div className="mt-4 border-t border-gray-50 pt-4 flex gap-2">
+                     {payment.receipt_url && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline"
+                              className="flex-1 h-10 rounded-xl border-gray-100 text-xs font-bold flex items-center gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View Receipt
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-6 bg-white">
+                             <DialogHeader>
+                               <DialogTitle className="text-xl font-black">Payment Receipt</DialogTitle>
+                             </DialogHeader>
+                             <div className="mt-4 rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 aspect-[3/4] flex items-center justify-center">
+                               <img src={payment.receipt_url} alt="Receipt" className="w-full h-full object-contain" />
+                             </div>
+                             <Button 
+                               onClick={() => handleApprove(payment.id)} 
+                               className="w-full h-14 rounded-2xl bg-[#1e4d2b] hover:bg-[#163a20] text-white font-bold mt-4"
+                             >
+                               Approve Now
+                             </Button>
+                          </DialogContent>
+                        </Dialog>
+                     )}
+                     <Button 
+                       onClick={() => handleApprove(payment.id)} 
+                       className="flex-1 h-10 rounded-xl bg-[#1e4d2b] hover:bg-[#163a20] text-white text-xs font-bold"
+                     >
+                       Approve Payment
+                     </Button>
+                   </div>
+                )}
               </CardContent>
             </Card>
           ))}
