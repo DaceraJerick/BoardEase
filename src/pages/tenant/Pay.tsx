@@ -95,25 +95,29 @@ const TenantPay = () => {
     }
 
     const baseRent = rooms?.rent_amount || 0;
-    const totalDue = unpaid?.amount || baseRent;
+    const totalDue = unpaid?.amount || 0;
     if (unpaid) setUnpaidId(unpaid.id);
     
     // Simulate a breakdown for visual fidelity matching the mockup
     // If totalDue > baseRent, we split the remainder 70/30 between Electricity and Water
+    let rentDue = 0;
     let elec = 0;
     let water = 0;
-    if (totalDue > baseRent) {
-      const extra = totalDue - baseRent;
-      elec = Math.floor(extra * 0.7);
-      water = extra - elec;
-    } else if (totalDue === baseRent && totalDue > 0) {
-      // Mock some small utility estimates if only base rent is present, just for the "premium look"
-      // But we'll keep it at 0 if no extra was billed to be honest to data
+    
+    if (totalDue > 0) {
+      if (totalDue >= baseRent) {
+        rentDue = baseRent;
+        const extra = totalDue - baseRent;
+        elec = Math.floor(extra * 0.7);
+        water = extra - elec;
+      } else {
+        rentDue = totalDue;
+      }
     }
 
     setDueInfo({
       total: totalDue,
-      rent: baseRent,
+      rent: rentDue,
       electricity: elec,
       water: water,
       month: format(new Date(), 'MMMM')

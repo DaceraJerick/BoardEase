@@ -11,9 +11,11 @@ import {
   UserPlus,
   AlertTriangle,
   History,
-  Megaphone as AnnounceIcon
+  Megaphone as AnnounceIcon,
+  Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -131,6 +133,22 @@ const LandlordDashboard = () => {
   useEffect(() => {
     fetchData();
   }, [user]);
+
+  const handleDeleteActivity = async (e: React.MouseEvent, id: string, type: string) => {
+    e.stopPropagation();
+    if (!confirm(`Are you sure you want to delete this ${type} record?`)) return;
+    
+    const table = type === 'payment' ? 'payments' : type === 'ticket' ? 'tickets' : 'tenants';
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    
+    toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} record deleted`);
+    fetchData();
+  };
 
   if (loading) {
     return (
@@ -278,6 +296,13 @@ const LandlordDashboard = () => {
                    {act.status.toUpperCase()}
                  </Badge>
                )}
+               <button 
+                 onClick={(e) => handleDeleteActivity(e, act.id, act.type)}
+                 className="p-2 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors ml-2"
+                 title={`Delete ${act.type}`}
+               >
+                 <Trash2 className="h-4 w-4" />
+               </button>
             </div>
           ))}
         </div>

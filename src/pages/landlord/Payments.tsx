@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Plus, CreditCard, Banknote, Calendar, History, X, Eye } from 'lucide-react';
+import { Plus, CreditCard, Banknote, Calendar, History, X, Eye, Trash2 } from 'lucide-react';
 import type { Payment, PaymentMethod, PaymentStatus } from '@/types/database';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
@@ -105,6 +105,20 @@ const LandlordPayments = () => {
     
     if (error) { toast.error(error.message); return; }
     toast.success('Payment approved');
+    fetchData();
+  };
+
+  const handleDelete = async (paymentId: string) => {
+    if (!confirm('Are you sure you want to delete this payment record?')) return;
+    
+    const { error } = await supabase.from('payments').delete().eq('id', paymentId);
+    
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    
+    toast.success('Payment record deleted');
     fetchData();
   };
 
@@ -248,9 +262,19 @@ const LandlordPayments = () => {
                       </div>
                     </div>
                   </div>
-                  <Badge className={`rounded-full px-3 py-1 text-[8px] font-black border-0 tracking-widest ${statusStyles[payment.status as PaymentStatus].bg} ${statusStyles[payment.status as PaymentStatus].color}`}>
-                    {payment.status.toUpperCase()}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge className={`rounded-full px-3 py-1 text-[8px] font-black border-0 tracking-widest ${statusStyles[payment.status as PaymentStatus].bg} ${statusStyles[payment.status as PaymentStatus].color}`}>
+                      {payment.status.toUpperCase()}
+                    </Badge>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors"
+                      onClick={() => handleDelete(payment.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-6 border-t border-gray-50 mt-2">
